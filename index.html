@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>高铁车厢数字阅读系统 | 扫码交互 · 无负担阅读</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #eef2f5;
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        /* 手机容器 */
+        .phone-container {
+            max-width: 450px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 36px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            height: 780px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        /* 状态栏/头部 */
+        .status-bar {
+            background: #fff;
+            padding: 12px 20px 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e2a3e;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .main-header {
+            padding: 8px 20px 0;
+            background: white;
+        }
+
+        .main-header h1 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0b2f5c, #1b4a7a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .main-header p {
+            font-size: 0.7rem;
+            color: #5e6f8d;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* 扫码入口 (着陆页) */
+        .scan-landing {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #f8fafc 0%, #eef2f9 100%);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .qr-mock {
+            background: white;
+            border-radius: 32px;
+            padding: 30px 24px;
+            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 260px;
+            margin-bottom: 32px;
+        }
+
+        .qr-icon {
+            font-size: 110px;
+            color: #1e4a76;
+            margin-bottom: 12px;
+        }
+
+        .scan-btn {
+            background: #1e4a76;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 48px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 18px rgba(0, 64, 128, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 12px;
+        }
+
+        .scan-btn:active {
+            transform: scale(0.97);
+            background: #0f3b5e;
+        }
+
+        .hint-text {
+            font-size: 0.75rem;
+            color: #4b6584;
+            margin-top: 24px;
+        }
+
+        /* 主界面 (初始隐藏) */
+        .main-interface {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: #f9fbfd;
+        }
+
+        /* 标签页栏 */
+        .tab-bar {
+            display: flex;
+            background: white;
+            padding: 8px 20px;
+            gap: 28px;
+            border-bottom: 1px solid #e9edf2;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .tab-item {
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 8px 0;
+            cursor: pointer;
+            color: #6c7a91;
+            border-bottom: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .tab-item.active {
+            color: #1e4a76;
+            border-bottom: 2px solid #1e4a76;
+        }
+
+        /* 内容卡片 */
+        .content-pane {
+            padding: 16px 20px;
+            display: block;
+        }
+
+        .pane-hidden {
+            display: none;
+        }
+
+        /* 个性化推荐模块 */
+        .rec-card {
+            background: linear-gradient(115deg, #eef5ff 0%, #e2eafc 100%);
+            border-radius: 24px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .rec-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #0b2f5c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .rec-article {
+            background: white;
+            border-radius: 20px;
+            padding: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: 0.1s ease;
+        }
+        .rec-article:active { background: #f0f4fa; }
+
+        /* 文章列表 */
+        .article-item {
+            background: white;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            border: 1px solid #edf2f7;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+        .article-item:active { background: #fafcff; transform: scale(0.99);}
+        .article-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e2f44;
+        }
+        .article-summary {
+            font-size: 0.75rem;
+            color: #5f6f8a;
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .tag {
+            background: #eef2ff;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            color: #1e4a76;
+        }
+
+        /* 服务模块 (粘性/积分) */
+        .service-toolbar {
+            background: white;
+            margin: 8px 20px 20px;
+            border-radius: 28px;
+            padding: 12px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+            border: 1px solid #eef2f8;
+        }
+        .point-box {
+            background: #fef6e0;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .icon-btn {
+            background: #f0f4fa;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 32px;
+            font-size: 0.7rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .font-slider {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+        }
+
+        /* 模态框 */
+        .modal-mask {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: 0.2s;
+        }
+        .modal-mask.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-container {
+            background: white;
+            width: 85%;
+            max-width: 380px;
+            max-height: 80%;
+            border-radius: 32px;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-content p {
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 12px 0;
+            color: #2c3e50;
+        }
+        .close-modal {
+            position: sticky;
+            top: 0;
+            background: white;
+            text-align: right;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* 辅助 */
+        .footer-note {
+            text-align: center;
+            font-size: 0.6rem;
+            padding: 12px;
+            color: #9aa9bf;
+            border-top: 1px solid #eef2f8;
+            background: white;
+        }
+        i, button { cursor: pointer; }
+        button { background: none; border: none; }
+        ::-webkit-scrollbar { width: 4px; }
+    </style>
+</head>
+<body>
+<div class="phone-container" id="app">
+    <!-- 状态/标题行 -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <span><i class="fas fa-battery-full"></i> <i class="fas fa-signal"></i></span>
+    </div>
+
+    <!-- 扫码初始页面 -->
+    <div id="scanPage" class="scan-landing">
+        <div class="qr-mock">
+            <div class="qr-icon"><i class="fas fa-qrcode"></i></div>
+            <div style="font-weight: bold; margin-bottom: 8px;">车厢座位码 · 扫码即读</div>
+            <div style="font-size: 0.7rem; color: gray;">无需下载 / 免注册登录</div>
+        </div>
+        <button class="scan-btn" id="simulateScanBtn">
+            <i class="fas fa-camera"></i> 模拟扫码体验
+        </button>
+        <div class="hint-text">
+            <i class="fas fa-wifi-slash"></i> 支持弱网/离线缓存 · 秒扫秒进
+        </div>
+        <div class="hint-text" style="margin-top: 12px;">
+            📖 青年专区 · 中老年专区 | 无负担数字阅读
+        </div>
+    </div>
+
+    <!-- 主界面 (阅读系统) -->
+    <div id="mainSystem" style="display: none; flex:1; flex-direction: column; overflow: hidden;">
+        <div class="main-header">
+            <h1>高铁·书香旅途</h1>
+            <p><i class="fas fa-train"></i> 扫码交互数字阅读系统 | 铁路文化宣传 · 零负担阅读</p>
+        </div>
+        <!-- Tab 切换: 青年/中老年/铁路专题 -->
+        <div class="tab-bar">
+            <div class="tab-item active" data-tab="youth">🚄 青年专区</div>
+            <div class="tab-item" data-tab="senior">🍵 中老年专区</div>
+            <div class="tab-item" data-tab="railway">🚞 铁路宣传专题</div>
+        </div>
+
+        <!-- 青年内容面板 -->
+        <div id="youthPane" class="content-pane">
+            <div class="rec-card" id="recYouthCard">
+                <div class="rec-title"><i class="fas fa-star-of-life"></i> 🧑‍💻 为你推荐 · 潮流青年</div>
+                <div id="youthRecommend"></div>
+            </div>
+            <div style="font-weight: 600; margin: 0 0 8px 0;">📚 热门阅读</div>
+            <div id="youthList"></div>
+        </div>
+        <!-- 中老年面板 -->
+        <div id="seniorPane" class="content-pane pane-hidden">
+            <div class="rec-card" id="recSeniorCard">
+                <div class="rec-title"><i class="fas fa-leaf"></i> 🌿 健康乐活 · 经典甄选</div>
+                <div id="seniorRecommend"></div>
+            </div>
+            <div style="font-weight: 600; margin: 0 0 8px 0;">📖 经典与实用</div>
+            <div id="seniorList"></div>
+        </div>
+        <!-- 铁路宣传专题面板 -->
+        <div id="railwayPane" class="content-pane pane-hidden">
+            <div class="rec-card" style="background: #eef0e5;">
+                <div class="rec-title"><i class="fas fa-flag-checkered"></i> 铁路文化 · 出行必读</div>
+                <div style="font-size:0.8rem; color:#2c3e47;">权威发布 | 安全知识 | 沿线文旅</div>
+            </div>
+            <div id="railwayList"></div>
+        </div>
+
+        <!-- 粘性/个性化服务栏 -->
+        <div class="service-toolbar">
+            <div class="point-box" id="pointDisplay"><i class="fas fa-coins"></i> 积分: <span id="pointsVal">0</span></div>
+            <button class="icon-btn" id="checkinBtn"><i class="fas fa-calendar-check"></i> 阅读打卡</button>
+            <div class="font-slider"><i class="fas fa-font"></i> <input type="range" id="globalFontSlider" min="12" max="22" step="1" value="15"></div>
+            <button class="icon-btn" id="offlineSimulateBtn"><i class="fas fa-download"></i> 离线缓存</button>
+        </div>
+        <div class="footer-note">
+            <i class="fas fa-hand-holding-heart"></i> 零负担阅读 · 基于年龄分层推送 | 书香铁路 伴您同行
+        </div>
+    </div>
+</div>
+
+<script>
+    // 兼容HTTP协议下的localStorage（解决部分浏览器限制）
+    if (!window.localStorage) {
+        window.localStorage = {
+            getItem: (key) => { return sessionStorage.getItem(key); },
+            setItem: (key, val) => { sessionStorage.setItem(key, val); },
+            removeItem: (key) => { sessionStorage.removeItem(key); }
+        };
+    }
+
+    // ---------- 文章库（符合论文青年/中老年偏好 + 铁路专题）----------
+    const articlesDB = [
+        // 青年专区 (youth)
+        { id: 1, title: "《旅途·星辰大海》网络文学精选", summary: "热门网文片段·青年人的精神漫游", content: "列车穿过隧道，窗外忽然明亮，仿佛驶入一片星海。这种在路上的青春，正是无数年轻人追梦的缩影……全文共2300字。", category: "youth", tags: "网络文学", longContent: true },
+        { id: 2, title: "职场干货｜高铁1小时学会时间管理法", summary: "番茄工作法+四象限法则，高效旅途", content: "利用碎片时间，学会这套时间管理术，让你的职场效率翻倍。方法一: 设定优先级……", category: "youth", tags: "职场技能" },
+        { id: 3, title: "淄博烧烤火了？沿线文旅打卡攻略", summary: "高铁沿线城市特色美食与文化地图", content: "从济南到淄博，烧烤专列火爆出圈。这份沿线文旅攻略带你品味齐鲁风情……", category: "youth", tags: "文旅攻略" },
+        { id: 4, title: "短视频文案拆解｜爆款内容创作心法", summary: "文案技巧与流量逻辑", content: "脚本黄金三秒，互动率提升秘诀……适合自媒体新人", category: "youth", tags: "潮流资讯" },
+        // 中老年专区 (senior)
+        { id: 5, title: "《黄帝内经》四季养生智慧", summary: "顺应天时，健康常伴", content: "春生夏长，秋收冬藏。中老年朋友注意节气调养，食疗小妙招……", category: "senior", tags: "健康养生" },
+        { id: 6, title: "时事新闻｜我国高铁里程突破4.5万公里", summary: "铁路建设新成就，出行更便捷", content: "截至2025年，全国高铁网覆盖96%的50万人口以上城市……", category: "senior", tags: "时事新闻" },
+        { id: 7, title: "经典重温｜朱自清《背影》节选", summary: "父爱如山，感人至深", content: "我与父亲不相见已二年余了，我最不能忘记的是他的背影……", category: "senior", tags: "经典文学" },
+        { id: 8, title: "铁路安全小常识｜老年出行必读", summary: "乘车细节与应急须知", content: "上下车注意站台缝隙，随身携带常备药，铁路安全伴你行。", category: "senior", tags: "铁路安全" },
+        // 铁路宣传专题 (特色内容)
+        { id: 9, title: "「书香铁路」阅读专列活动回顾", summary: "流动的文化驿站，让旅途溢满书香", content: "铁路部门联合出版社，推出阅读专列，扫码即享万册好书……", category: "railway", tags: "铁路文化" },
+        { id: 10, title: "坐着高铁看中国｜京沪线风景人文", summary: "沿线城市历史与新风", content: "从故宫到外滩，高铁4小时阅尽千年繁华……", category: "railway", tags: "沿线文旅" },
+        { id: 11, title: "铁路出行服务升级：静音车厢+适老化", summary: "让旅途更有温度", content: "铁路部门推进适老化改造，推出专属服务，满足老年人出行需求。", category: "railway", tags: "出行服务" },
+        { id: 12, title: "安全宣传｜高铁消防与应急指南", summary: "平安旅途 人人有责", content: "车厢内禁止吸烟，如遇突发请按紧急按钮，听从工作人员指挥。", category: "railway", tags: "铁路安全" }
+    ];
+
+    // 积分存储
+    let userPoints = localStorage.getItem("readingPoints") ? parseInt(localStorage.getItem("readingPoints")) : 0;
+    let visited = false; // 打卡今日标记简单处理
+    let currentFontSize = 15; // 全局基准字号
+
+    // dom 元素
+    const scanPage = document.getElementById('scanPage');
+    const mainSystem = document.getElementById('mainSystem');
+    const simulateBtn = document.getElementById('simulateScanBtn');
+    const youthPane = document.getElementById('youthPane');
+    const seniorPane = document.getElementById('seniorPane');
+    const railwayPane = document.getElementById('railwayPane');
+    const tabs = document.querySelectorAll('.tab-item');
+    const youthListDiv = document.getElementById('youthList');
+    const seniorListDiv = document.getElementById('seniorList');
+    const railwayListDiv = document.getElementById('railwayList');
+    const youthRecommendDiv = document.getElementById('youthRecommend');
+    const seniorRecommendDiv = document.getElementById('seniorRecommend');
+    const pointsSpan = document.getElementById('pointsVal');
+    const checkinBtn = document.getElementById('checkinBtn');
+    const globalFontSlider = document.getElementById('globalFontSlider');
+    const offlineSimBtn = document.getElementById('offlineSimulateBtn');
+
+    // 模态框组件
+    let modal = null;
+    function createModal() {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'modal-mask';
+        modalDiv.innerHTML = `<div class="modal-container"><div class="close-modal">&times;</div><div class="modal-content" id="modalContent"></div></div>`;
+        document.body.appendChild(modalDiv);
+        modalDiv.querySelector('.close-modal').onclick = () => modalDiv.classList.remove('active');
+        modalDiv.onclick = (e) => { if(e.target === modalDiv) modalDiv.classList.remove('active'); };
+        return modalDiv;
+    }
+
+    function showArticle(article) {
+        if (!modal) modal = createModal();
+        const contentDiv = modal.querySelector('#modalContent');
+        let fullContent = `<h3 style="margin-bottom: 8px;">${article.title}</h3><div style="font-size: ${currentFontSize}px; color:#2d3e50;">`;
+        fullContent += `<p>${article.content}</p>`;
+        if(article.longContent) fullContent += `<p style="margin-top:12px; background:#f5f9ff; padding:12px; border-radius:16px;">🌟 旅途阅读进度保存 · 支持有声朗读（模拟功能）<br>您上次阅读至第3段，可继续品读。</p>`;
+        fullContent += `<div style="margin-top:16px; font-size:0.7rem; color:#6c86a3;"><i class="fas fa-bookmark"></i> 离线缓存已支持 | 铁路文化传播</div>`;
+        fullContent += `</div><div style="display:flex; gap:12px; margin-top:20px;"><button id="modalFontPlus" style="background:#eef2ff; padding:6px 12px; border-radius:32px;">A+ 大字号</button><button id="modalFontMinus" style="background:#eef2ff; padding:6px 12px; border-radius:32px;">A- 小字号</button></div>`;
+        contentDiv.innerHTML = fullContent;
+        modal.classList.add('active');
+        // 单独模态框字体控制（临时不影响全局预览）
+        const modalFontPlus = document.getElementById('modalFontPlus');
+        const modalFontMinus = document.getElementById('modalFontMinus');
+        let modalFontSize = currentFontSize;
+        const contentPara = contentDiv.querySelector('div');
+        const setModalFont = (size) => {
+            if(contentPara) contentPara.style.fontSize = size + 'px';
+        };
+        setModalFont(modalFontSize);
+        if(modalFontPlus) modalFontPlus.onclick = () => { modalFontSize = Math.min(28, modalFontSize+2); setModalFont(modalFontSize); };
+        if(modalFontMinus) modalFontMinus.onclick = () => { modalFontSize = Math.max(14, modalFontSize-2); setModalFont(modalFontSize); };
+    }
+
+    // 渲染文章列表
+    function renderArticles() {
+        // 青年
+        const youthArticles = articlesDB.filter(a => a.category === 'youth');
+        youthListDiv.innerHTML = youthArticles.map(art => `
+            <div class="article-item" data-id="${art.id}" data-cat="youth">
+                <div class="article-title">${art.title}</div>
+                <div class="article-summary">${art.summary}<span class="tag">${art.tags}</span></div>
+            </div>
+        `).join('');
+        // 中老年
+        const seniorArticles = articlesDB.filter(a => a.category === 'senior');
+        seniorListDiv.innerHTML = seniorArticles.map(art => `
+            <div class="article-item" data-id="${art.id}" data-cat="senior">
+                <div class="article-title">${art.title}</div>
+                <div class="article-summary">${art.summary}<span class="tag">${art.tags}</span></div>
+            </div>
+        `).join('');
+        // 铁路专题
+        const railwayArticles = articlesDB.filter(a => a.category === 'railway');
+        railwayListDiv.innerHTML = railwayArticles.map(art => `
+            <div class="article-item" data-id="${art.id}" data-cat="railway">
+                <div class="article-title">${art.title}</div>
+                <div class="article-summary">${art.summary}<span class="tag">${art.tags}</span></div>
+            </div>
+        `).join('');
+
+        // 个性化推荐（基于青年、老年画像随机智能推荐）
+        const youthRec = youthArticles.slice(0,2);
+        youthRecommendDiv.innerHTML = youthRec.map(art => `<div class="rec-article" data-id="${art.id}">📌 ${art.title}<div style="font-size:0.65rem;">🔥 热门推荐 · 青年都在读</div></div>`).join('');
+        const seniorRec = seniorArticles.slice(0,2);
+        seniorRecommendDiv.innerHTML = seniorRec.map(art => `<div class="rec-article" data-id="${art.id}">📖 ${art.title}<div style="font-size:0.65rem;">⭐ 权威实用推荐</div></div>`).join('');
+
+        // 绑定文章点击事件 (全部)
+        document.querySelectorAll('.article-item, .rec-article').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                let id = parseInt(el.dataset.id);
+                let found = articlesDB.find(a => a.id === id);
+                if(found) showArticle(found);
+                else {
+                    // 针对 rec-article 取 id
+                    const pid = el.dataset.id;
+                    if(pid) { let art = articlesDB.find(a=>a.id == pid); if(art) showArticle(art); }
+                }
+            };
+        });
+    }
+
+    // 个性化/积分更新
+    function updatePointsUI() {
+        pointsSpan.innerText = userPoints;
+        localStorage.setItem("readingPoints", userPoints);
+    }
+    function handleCheckin() {
+        let lastDate = localStorage.getItem("lastCheckinDate");
+        const today = new Date().toDateString();
+        if(lastDate === today) {
+            alert("今日已打卡，明日再来攒积分吧～ 让阅读成为习惯 ✨");
+        } else {
+            userPoints += 10;
+            updatePointsUI();
+            localStorage.setItem("lastCheckinDate", today);
+            alert("打卡成功！+10积分，积分可兑换书香铁路文创纪念品（模拟）🎁");
+        }
+    }
+    // 全局字体调整
+    function applyGlobalFont(size) {
+        currentFontSize = size;
+        document.documentElement.style.setProperty('--base-font', size+'px');
+        // 调整文章列表摘要和正文卡片字体略微影响
+        const allCards = document.querySelectorAll('.article-title, .rec-article, .article-summary');
+        allCards.forEach(card => {
+            card.style.fontSize = size * 0.9 + 'px';
+        });
+        document.querySelectorAll('.article-title').forEach(t => t.style.fontSize = size + 'px');
+    }
+
+    // 离线缓存模拟（展示优化策略）
+    function offlineCacheSimulate() {
+        alert("📡 模拟离线缓存策略：您浏览过的文章已自动缓存至本地，在隧道弱网环境下仍然可阅读已加载内容，真正做到“零负担”阅读。当前已缓存6篇热门文章。");
+    }
+
+    // Tab 切换逻辑
+    function switchTab(tabId) {
+        youthPane.classList.add('pane-hidden');
+        seniorPane.classList.add('pane-hidden');
+        railwayPane.classList.add('pane-hidden');
+        if(tabId === 'youth') youthPane.classList.remove('pane-hidden');
+        else if(tabId === 'senior') seniorPane.classList.remove('pane-hidden');
+        else if(tabId === 'railway') railwayPane.classList.remove('pane-hidden');
+        tabs.forEach(tab => {
+            const val = tab.dataset.tab;
+            if(val === tabId) tab.classList.add('active');
+            else tab.classList.remove('active');
+        });
+    }
+
+    // 模拟扫码进入主系统 (体现扫码交互)
+    function enterSystem() {
+        scanPage.style.display = 'none';
+        mainSystem.style.display = 'flex';
+        renderArticles();
+        updatePointsUI();
+        applyGlobalFont(currentFontSize);
+        // 显示toast友好提示
+        setTimeout(() => {
+            const toastMsg = document.createElement('div');
+            toastMsg.innerText = '🚄 扫码成功！欢迎使用高铁数字阅读系统 · 零门槛 无负担';
+            toastMsg.style.position = 'fixed'; toastMsg.style.bottom='70px'; toastMsg.style.left='20px';
+            toastMsg.style.backgroundColor='#1e4a76'; toastMsg.style.color='white'; toastMsg.style.padding='8px 16px';
+            toastMsg.style.borderRadius='40px'; toastMsg.style.fontSize='12px'; toastMsg.style.zIndex='999';
+            document.body.appendChild(toastMsg);
+            setTimeout(()=>toastMsg.remove(), 2000);
+        }, 100);
+        // 统计用户行为个性化模拟
+    }
+
+    // 事件绑定
+    simulateBtn.addEventListener('click', enterSystem);
+    checkinBtn.addEventListener('click', handleCheckin);
+    globalFontSlider.addEventListener('input', (e) => {
+        const newSize = parseInt(e.target.value);
+        applyGlobalFont(newSize);
+    });
+    offlineSimBtn.addEventListener('click', offlineCacheSimulate);
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabVal = tab.dataset.tab;
+            switchTab(tabVal);
+        });
+    });
+
+    // 预置一些文章阅读进度保存模拟
+    window.onload = () => {
+        // 初始积分展示
+        if(!localStorage.getItem("readingPoints")) localStorage.setItem("readingPoints","0");
+        userPoints = parseInt(localStorage.getItem("readingPoints"));
+        if(pointsSpan) pointsSpan.innerText = userPoints;
+        // 如果没有进入系统，展示扫描页面，确保未登录模式
+    };
+</script>
+</body>
+</html>
